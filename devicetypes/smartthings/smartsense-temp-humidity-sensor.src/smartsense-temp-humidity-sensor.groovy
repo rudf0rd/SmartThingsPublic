@@ -30,6 +30,7 @@ metadata {
 		fingerprint profileId: "0104", inClusters: "0001,0003,0020,0402,0B05,FC45", outClusters: "0019,0003", manufacturer: "CentraLite", model: "3310", deviceJoinName: "Temp & Humidity Sensor"
 		fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0402", manufacturer: "Heiman", model: "b467083cfc864f5e826459e5d8ea6079", deviceJoinName: "Orvibo Temperature & Humidity Sensor"
 		fingerprint profileId: "0104", deviceId: "0302", inClusters: "0000,0001,0003,0402", manufacturer: "HEIMAN", model: "888a434f3cfc47f29ec4a3a03e9fc442", deviceJoinName: "Orvibo Temperature & Humidity Sensor"
+		fingerprint profileId: "0104",  inClusters: "0000, 0001, 0003, 0009, 0402", manufacturer: "HEIMAN", model: "HT-EM", deviceJoinName: "HEIMAN Temperature & Humidity Sensor"
 	}
 
 	simulator {
@@ -83,7 +84,11 @@ def parse(String description) {
 	if (!map) {
 		Map descMap = zigbee.parseDescriptionAsMap(description)
 		if (descMap.clusterInt == 0x0001 && descMap.commandInt != 0x07 && descMap?.value) {
-			map = getBatteryResult(Integer.parseInt(descMap.value, 16))
+			if (descMap.attrInt == 0x0021) {
+            			map = getBatteryPercentageResult(Integer.parseInt(descMap.value,16))
+			} else {
+				map = getBatteryResult(Integer.parseInt(descMap.value, 16))
+            		}
 		} else if (descMap?.clusterInt == zigbee.TEMPERATURE_MEASUREMENT_CLUSTER && descMap.commandInt == 0x07) {
 			if (descMap.data[0] == "00") {
 				log.debug "TEMP REPORTING CONFIG RESPONSE: $descMap"
@@ -106,6 +111,21 @@ def parse(String description) {
 
 	log.debug "Parse returned $map"
 	return map ? createEvent(map) : [:]
+}
+
+
+def getBatteryPercentageResult(rawValue) {
+	log.debug "Battery Percentage rawValue = ${rawValue} -> ${rawValue / 2}%"
+	def result = [:]
+
+	if (0 <= rawValue && rawValue <= 200) {
+		result.name = 'battery'
+		result.translatable = true
+		result.value = Math.round(rawValue / 2)
+		result.descriptionText = "${device.displayName} battery was ${result.value}%"
+	}
+
+	return result
 }
 
 private Map getBatteryResult(rawValue) {

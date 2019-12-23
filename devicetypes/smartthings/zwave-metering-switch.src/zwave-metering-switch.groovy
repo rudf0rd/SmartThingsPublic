@@ -50,6 +50,7 @@ metadata {
 		fingerprint mfr: "0371", prod: "0103", model: "00AF", deviceJoinName: "Aeotec Smart Switch 7", ocfDeviceType: "oic.d.smartplug"  //US
 		fingerprint mfr: "0060", prod: "0004", model: "000B", deviceJoinName: "Everspring Smart Plug", ocfDeviceType: "oic.d.smartplug"  //US
 		fingerprint mfr: "031E", prod: "0002", model: "0001", deviceJoinName: "Inovelli Switch Red Series" //US
+		fingerprint mfr: "0154", prod: "0003", model: "000A", deviceJoinName: "POPP Smart Outdoor Plug", ocfDeviceType: "oic.d.smartplug" //EU
 	}
 
 	// simulator metadata
@@ -63,7 +64,7 @@ metadata {
 		}
 		for (int i = 0; i <= 100; i += 10) {
 			status "energy	${i} kWh": new physicalgraph.zwave.Zwave().meterV1.meterReport(
-			   scaledMeterValue: i, precision: 3, meterType: 0, scale: 0, size: 4).incomingMessage()
+				scaledMeterValue: i, precision: 3, meterType: 0, scale: 0, size: 4).incomingMessage()
 		}
 
 		// reply messages
@@ -257,6 +258,8 @@ def configure() {
 		result << response(encap(zwave.configurationV1.configurationSet(parameterNumber: 13, size: 2, scaledConfigurationValue: 5*60))) // report every 5 minutes
 	} else if (zwaveInfo.mfr == "014F" && zwaveInfo.prod == "5053" && zwaveInfo.model == "3531") {
 		result << response(encap(zwave.configurationV1.configurationSet(parameterNumber: 13, size: 2, scaledConfigurationValue: 15))) //report kWH every 15 min
+	} else if (zwaveInfo.mfr == "0154" && zwaveInfo.prod == "0003" && zwaveInfo.model == "000A") {
+		result << response(encap(zwave.configurationV1.configurationSet(parameterNumber: 25, size: 1, scaledConfigurationValue: 1))) //report every 1W change
 	}
 	result << response(encap(meterGet(scale: 0)))
 	result << response(encap(meterGet(scale: 2)))
